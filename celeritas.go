@@ -23,7 +23,7 @@ func (c *Celertias) New(rootPath string) error {
 
 	pathConfig := initPaths{
 		rootPath:    rootPath,
-		folderNames: []string{"handlers", "migrations", "views", "data", "logs", "middleware"},
+		folderNames: []string{"handlers", "migrations", "views", "data", "logs", "middleware", "public","tmp"},
 	}
 
 	err := c.Init(pathConfig)
@@ -67,7 +67,7 @@ func (c *Celertias) Init(p initPaths) error {
 }
 
 func (c *Celertias) CheckDotEnv(path string) error {
-	err := c.CreateDirIfNotExist(fmt.Sprintf("%s/.env", path))
+	err := c.CreateFileIfNotExist(fmt.Sprintf("%s/.env", path))
 	if err != nil {
 		return err
 	}
@@ -85,3 +85,5 @@ func (c *Celertias) startLoggers() (*log.Logger, *log.Logger) {
 	return infoLog, errorLog
 
 }
+
+func 
