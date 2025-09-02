@@ -103,7 +103,7 @@ func (c *Celeritas) startLoggers() (*log.Logger, *log.Logger) {
 }
 
 // listen and server starts the web server
-func (c *Celeritas) listenAndServe() {
+func (c *Celeritas) ListenAndServe() {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", os.Getenv("PORT")),
 		ErrorLog:     c.ErrorLog,
