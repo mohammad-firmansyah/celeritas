@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -20,6 +21,7 @@ type Celeritas struct {
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
 	RootPath string
+	Routes   *chi.Mux
 	config   config
 }
 
@@ -62,6 +64,7 @@ func (c *Celeritas) New(rootPath string) error {
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
 	}
+	c.Routes = c.routes().(*chi.Mux)
 	return nil
 }
 
