@@ -1,9 +1,11 @@
 package celeritas
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -65,16 +67,39 @@ func (c *Celertias) Init(p initPaths) error {
 
 	return nil
 }
-
-func (c *Celertias) CheckDotEnv(path string) error {
-	err := c.CreateFileIfNotExist(fmt.Sprintf("%s/.env", path))
-	if err != nil {
-		return err
+func (c *Celertias) EnsureFile(path string) error {
+	// 1) Ensure parent directory exists
+	parent := filepath.Dir(path)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return fmt.Errorf("ensure parent dir: %w", err)
 	}
 
+	// 2) Inspect existing path
+	info, err := os.Stat(path)
+	if err == nil {
+		if info.IsDir() {
+			return fmt.Errorf("path exists but is a directory: %s", path)
+		}
+		// It is already a file; nothing to do.
+		return nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("stat %s: %w", path, err)
+	}
+
+	// 3) Create the file
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0o644)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", path, err)
+	}
+	defer f.Close()
 	return nil
 }
 
+func (c *Celertias) CheckDotEnv(root string) error {
+	envPath := filepath.Join(root, ".env")
+	return c.EnsureFile(envPath)
+}
 func (c *Celertias) startLoggers() (*log.Logger, *log.Logger) {
 	var infoLog *log.Logger
 	var errorLog *log.Logger
