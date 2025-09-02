@@ -23,7 +23,7 @@ func (c *Celertias) New(rootPath string) error {
 
 	pathConfig := initPaths{
 		rootPath:    rootPath,
-		folderNames: []string{"handlers", "migrations", "views", "data", "logs", "middleware", "public","tmp"},
+		folderNames: []string{"handlers", "migrations", "views", "data", "logs", "middleware", "public", "tmp"},
 	}
 
 	err := c.Init(pathConfig)
@@ -85,5 +85,3 @@ func (c *Celertias) startLoggers() (*log.Logger, *log.Logger) {
 	return infoLog, errorLog
 
 }
-
-func 
