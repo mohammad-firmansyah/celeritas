@@ -11,7 +11,7 @@ import (
 
 const version = "1.0.0"
 
-type Celertias struct {
+type Celeritas struct {
 	AppName  string
 	Debug    bool
 	Version  string
@@ -19,7 +19,7 @@ type Celertias struct {
 	ErrorLog *log.Logger
 }
 
-func (c *Celertias) New(rootPath string) error {
+func (c *Celeritas) New(rootPath string) error {
 
 	pathConfig := initPaths{
 		rootPath:    rootPath,
@@ -52,7 +52,7 @@ func (c *Celertias) New(rootPath string) error {
 	return nil
 }
 
-func (c *Celertias) Init(p initPaths) error {
+func (c *Celeritas) Init(p initPaths) error {
 	root := p.rootPath
 
 	for _, path := range p.folderNames {
@@ -66,7 +66,7 @@ func (c *Celertias) Init(p initPaths) error {
 	return nil
 }
 
-func (c *Celertias) CheckDotEnv(path string) error {
+func (c *Celeritas) CheckDotEnv(path string) error {
 	err := c.CreateFileIfNotExist(fmt.Sprintf("%s\\.env", path))
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (c *Celertias) CheckDotEnv(path string) error {
 	return nil
 }
 
-func (c *Celertias) startLoggers() (*log.Logger, *log.Logger) {
+func (c *Celeritas) startLoggers() (*log.Logger, *log.Logger) {
 	var infoLog *log.Logger
 	var errorLog *log.Logger
 
