@@ -9,7 +9,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 type Celeritas struct {
 	AppName  string
