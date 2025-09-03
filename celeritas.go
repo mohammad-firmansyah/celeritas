@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/mohammad-firmansyah/celeritas/render"
 )
 
 const version = "1.0.0"
@@ -22,6 +23,7 @@ type Celeritas struct {
 	ErrorLog *log.Logger
 	RootPath string
 	Routes   *chi.Mux
+	Render   *render.Render
 	config   config
 }
 
@@ -64,6 +66,7 @@ func (c *Celeritas) New(rootPath string) error {
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
 	}
+	c.createRenderer()
 	c.Routes = c.routes().(*chi.Mux)
 	return nil
 }
@@ -107,12 +110,22 @@ func (c *Celeritas) ListenAndServe() {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", os.Getenv("PORT")),
 		ErrorLog:     c.ErrorLog,
-		Handler:      c.routes(),
+		Handler:      c.Routes,
 		IdleTimeout:  30 * time.Second,
 		WriteTimeout: 600 * time.Second,
 	}
 
-	c.InfoLog.Println("Listening on port %s", os.Getenv("PORT"))
+	c.InfoLog.Println("Listening on port", os.Getenv("PORT"))
 	err := srv.ListenAndServe()
 	c.ErrorLog.Fatal(err)
+}
+
+func (c *Celeritas) createRenderer() {
+	myRenderer := render.Render{
+		Renderer: c.config.renderer,
+		RootPath: c.RootPath,
+		Port:     c.config.port,
+	}
+
+	c.Render = &myRenderer
 }
