@@ -17,6 +17,7 @@ func (c *Celeritas) routes() http.Handler {
 	}
 
 	mux.Use(middleware.Recoverer)
+	mux.Use(c.SessionLoad)
 
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Welcome to celeritas")

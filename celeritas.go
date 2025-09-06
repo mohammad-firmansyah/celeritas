@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/CloudyKit/jet/v6"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/mohammad-firmansyah/celeritas/render"
+	"github.com/mohammad-firmansyah/celeritas/session"
 )
 
 const version = "1.0.0"
@@ -27,18 +29,23 @@ type Celeritas struct {
 	JetViews *jet.Set
 	Render   *render.Render
 	config   config
+	Session  *scs.SessionManager
+	DB       Database
 }
 
 type config struct {
-	port     string
-	renderer string
+	port        string
+	renderer    string
+	cookie      cookieConfig
+	sessionType string
+	database    databaseConfig
 }
 
 func (c *Celeritas) New(rootPath string) error {
 
 	pathConfig := initPaths{
 		rootPath:    rootPath,
-		folderNames: []string{"handlers", "migrations", "views", "data", "logs", "middleware"},
+		folderNames: []string{"handlers", "migrations", "views", "data", "logs", "middleware", "public", "tmp"},
 	}
 
 	err := c.Init(pathConfig)
@@ -59,6 +66,20 @@ func (c *Celeritas) New(rootPath string) error {
 
 	// create logger
 	infoLog, errLog := c.startLoggers()
+
+	// connect to db
+	if os.Getenv("DATABASE_TYPE") != "" {
+		db, err := c.OpenDB(os.Getenv("DATABASE_TYPE"), c.BuildDSN())
+		if err != nil {
+			errLog.Println(err)
+			os.Exit(1)
+		}
+
+		c.DB = Database{
+			DatabaseType: os.Getenv("DATABASE_TYPE"),
+			Pool:         db,
+		}
+	}
 	c.InfoLog = infoLog
 	c.ErrorLog = errLog
 	c.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
@@ -67,7 +88,30 @@ func (c *Celeritas) New(rootPath string) error {
 	c.config = config{
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
+		cookie: cookieConfig{
+			name:     os.Getenv("COOKIE_NAME"),
+			lifetime: os.Getenv("COOKIE_LIFETIME"),
+			persist:  os.Getenv("COOKIE_PERSIST"),
+			secure:   os.Getenv("COOKIE_SECURE"),
+			domain:   os.Getenv("COOKIE_DOMAIN"),
+		},
+		sessionType: os.Getenv("SESSION_TYPE"),
+		database: databaseConfig{
+			database: os.Getenv("DATABASE_TYPE"),
+			dsn:      c.BuildDSN(),
+		},
 	}
+
+	//create session
+	sess := session.Session{
+		CookieLifetime: c.config.cookie.lifetime,
+		CookiePersist:  c.config.cookie.persist,
+		CookieName:     c.config.cookie.name,
+		SessionType:    c.config.sessionType,
+		CookieDomain:   c.config.cookie.domain,
+	}
+
+	c.Session = sess.InitSession()
 
 	var views = jet.NewSet(
 		jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rootPath)),
@@ -126,6 +170,8 @@ func (c *Celeritas) ListenAndServe() {
 		WriteTimeout: 600 * time.Second,
 	}
 
+	defer c.DB.Pool.Close()
+
 	c.InfoLog.Println("Listening on port", os.Getenv("PORT"))
 	err := srv.ListenAndServe()
 	c.ErrorLog.Fatal(err)
@@ -140,4 +186,26 @@ func (c *Celeritas) createRenderer() {
 	}
 
 	c.Render = &myRenderer
+}
+
+func (c *Celeritas) BuildDSN() string {
+	var dsn string
+
+	switch os.Getenv("DATABASE_TYPE") {
+	case "postgres", "postgresql":
+		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s timezone=UTC connect_timeout=5",
+			os.Getenv("DATABASE_HOST"),
+			os.Getenv("DATABASE_PORT"),
+			os.Getenv("DATABASE_USER"),
+			os.Getenv("DATABASE_NAME"),
+			os.Getenv("DATABASE_SSL_MODE"),
+		)
+
+		if os.Getenv("DATABASE_PASS") != "" {
+			dsn = fmt.Sprintf("%s password=%s", dsn, os.Getenv("DATABASE_PASS"))
+		}
+
+	default:
+	}
+	return dsn
 }
